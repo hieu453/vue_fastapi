@@ -1,0 +1,10 @@
+fastapi[standard]
+uvicorn[standard]
+sqlmodel
+asyncpg
+pyjwt
+python-multipart
+passlib
+asyncpg
+databases[postgresql]
+psycopg2-binary

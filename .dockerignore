@@ -1,0 +1,11 @@
+app/**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+*.log
+.DS_Store
+.git
+vue-fastapi/node_modules/
