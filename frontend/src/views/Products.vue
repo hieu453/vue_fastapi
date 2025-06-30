@@ -1,21 +1,22 @@
 <script setup>
 import { api } from '@/plugins/axios';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { inject, onMounted, ref } from 'vue';
+import { inject, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import Edit from './Edit.vue';
 import Delete from './Delete.vue';
 import Create from './Create.vue';
+import { resetObject } from '@/utils/resetObject';
 
 const products = ref()
 const error = ref('')
+const validationErrors = reactive({})
 const openEditModal = ref(false)
 const openDeleteModal = ref(false)
 const openCreateModal = ref(false)
 const selectedProduct = ref()
 
 const showSnackbar = inject('showSnackbar')
-console.log(showSnackbar)
 
 const authStore = useAuthStore();
 const router = useRouter()
@@ -23,11 +24,17 @@ const router = useRouter()
 const showEditModal = (product) => {
     openEditModal.value = true
     selectedProduct.value = { ...product }
+    resetObject(validationErrors)
 }
 
 const showDeleteModal = (product) => {
     openDeleteModal.value = true
     selectedProduct.value = { ...product }
+}
+
+const showCreateModal = () => {
+    openCreateModal.value = true
+    resetObject(validationErrors)
 }
 
 const fetchProducts = async () => {
@@ -38,19 +45,36 @@ const fetchProducts = async () => {
         error.value = 'You are not logged in!'
     }
 }
-
 const createProduct = async (inputs) => {
-    await api.post('products', inputs)
-    openCreateModal.value = false
-    showSnackbar('Product Created!')
-    fetchProducts()
+    try {
+        await api.post('products', inputs)
+        openCreateModal.value = false
+        showSnackbar('Product Created!')
+        fetchProducts()
+    } catch (error) {
+        const details = error.response.data.detail
+        details.forEach(detail => {
+            const field = detail.loc[detail.loc.length - 1]
+            validationErrors[field] = detail.msg
+        });
+    }
 }
 
 const updateProduct = async (inputs) => {
-    await api.patch(`products/${inputs.id}`, inputs)
-    openEditModal.value = false
-    showSnackbar('Product Updated!')
-    fetchProducts()
+    try {
+        await api.patch(`products/${inputs.id}`, inputs)
+        openEditModal.value = false
+        showSnackbar('Product Updated!', 'success')
+        console.log(validationErrors)
+        fetchProducts()
+    } catch (error) {
+        console.log(error)
+        const details = error.response.data.detail
+        details.forEach(detail => {
+            const field = detail.loc[detail.loc.length - 1]
+            validationErrors[field] = detail.msg
+        });
+    }
 }
 
 const deleteProduct = async (product) => {
@@ -73,6 +97,7 @@ onMounted(fetchProducts)
         v-model="openEditModal" 
         :product="selectedProduct"
         @update="updateProduct"
+        :errors="validationErrors"
     />
     <delete
         v-model="openDeleteModal"
@@ -82,10 +107,11 @@ onMounted(fetchProducts)
     <create 
         v-model="openCreateModal"
         @create="createProduct"
+        :errors="validationErrors"
     />
     <v-container>
         <v-row justify="center" class="ga-2">
-            <v-btn color="blue" rounded="lg" @click="openCreateModal = true">
+            <v-btn color="blue" rounded="lg" @click="showCreateModal">
                 Create product
             </v-btn>
             <v-btn rounded="lg" @click="logout">

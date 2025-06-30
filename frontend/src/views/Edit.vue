@@ -4,7 +4,8 @@ import { ref, shallowRef, watch } from 'vue';
 const model = defineModel()
 defineEmits(['update'])
 const props = defineProps({
-    product: Object
+    product: Object,
+    errors: Object
 })
 
 const inputs = ref()
@@ -20,11 +21,11 @@ watch(() => props.product, () => {
             <v-card-text>
                 <v-row dense>
                     <v-col cols="12" md="4" sm="6">
-                        <v-text-field label="Name" v-model="inputs.name"></v-text-field>
+                        <v-text-field :error-messages="errors?.name" label="Name" v-model="inputs.name"></v-text-field>
                     </v-col>
 
                     <v-col cols="12" md="4" sm="6">
-                        <v-text-field label="Price" type="number" v-model="inputs.price"></v-text-field>
+                        <v-text-field :error-messages="errors?.price" label="Price" type="number" v-model="inputs.price"></v-text-field>
                     </v-col>
                 </v-row>
             </v-card-text>

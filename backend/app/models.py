@@ -3,7 +3,7 @@ from sqlmodel import Field, SQLModel
 
 
 class ProductBase(SQLModel):
-    name: str
+    name: str = Field(min_length=1)
     price: float
 
 
@@ -16,7 +16,7 @@ class ProductCreate(ProductBase):
 
 
 class ProductUpdate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(min_length=1)
     price: float | None = None
 
 

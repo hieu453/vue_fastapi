@@ -1,6 +1,7 @@
 <script setup>
 defineProps({
-    text: String
+    text: String,
+    color: String
 })
 
 const model = defineModel()
@@ -9,11 +10,11 @@ const model = defineModel()
 
 <template>
     <div class="text-center ma-2">
-        <v-snackbar v-model="model" timeout="1000">
+        <v-snackbar v-model="model" timeout="1000" :color="color">
             {{ text }}
 
             <template v-slot:actions>
-                <v-btn color="pink" variant="text" @click="model = false">
+                <v-btn color="white" variant="text" @click="model = false">
                     Close
                 </v-btn>
             </template>
