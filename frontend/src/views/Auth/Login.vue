@@ -25,7 +25,6 @@ const login = async () => {
 
     if (valid) {
         const success = await authStore.login(inputs)
-
         if (success) {
             router.push({ name: 'products' })
         }

@@ -39,7 +39,6 @@ const register = async () => {
             router.push({ name: 'products' })
             loading.value = false;
         } catch (error) {
-            console.log(error.response.data.detail)
             errors.value = error.response.data.detail
             loading.value = false;
         }

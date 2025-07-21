@@ -16,7 +16,8 @@ export const useAuthStore = defineStore('auth', () => {
                     "Content-Type": "multipart/form-data"
                 }
             })
-            localStorage.setItem('auth-token', response.data.access_token)
+            localStorage.setItem('access_token', response.data.access_token)
+            localStorage.setItem('refresh_token', response.data.refresh_token)
 
             return true
         } catch (error) {
@@ -28,7 +29,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     const logout = () => {
-        localStorage.removeItem('auth-token')
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+        window.location.href = "/login"
     }
 
     const getAuthUser = async () => {

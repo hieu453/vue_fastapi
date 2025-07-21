@@ -15,6 +15,7 @@ const openEditModal = ref(false)
 const openDeleteModal = ref(false)
 const openCreateModal = ref(false)
 const selectedProduct = ref()
+const checkedProductIds = ref([])
 
 const showSnackbar = inject('showSnackbar')
 
@@ -50,7 +51,7 @@ const createProduct = async (inputs) => {
         await api.post('products', inputs)
         openCreateModal.value = false
         showSnackbar('Product Created!')
-        fetchProducts()
+        await fetchProducts()
     } catch (error) {
         const details = error.response.data.detail
         details.forEach(detail => {
@@ -65,15 +66,17 @@ const updateProduct = async (inputs) => {
         await api.patch(`products/${inputs.id}`, inputs)
         openEditModal.value = false
         showSnackbar('Product Updated!', 'success')
-        console.log(validationErrors)
-        fetchProducts()
+        await fetchProducts()
     } catch (error) {
-        console.log(error)
         const details = error.response.data.detail
-        details.forEach(detail => {
-            const field = detail.loc[detail.loc.length - 1]
-            validationErrors[field] = detail.msg
-        });
+        if (Array.isArray(details)) {
+            details.forEach(detail => {
+                const field = detail.loc[detail.loc.length - 1]
+                validationErrors[field] = detail.msg
+            });
+        } else {
+            validationErrors['auth'] = details
+        }
     }
 }
 
@@ -81,15 +84,18 @@ const deleteProduct = async (product) => {
     await api.delete(`products/${product.id}/delete`)
     openDeleteModal.value = false
     showSnackbar('Product Deleted!')
-    fetchProducts()
+    await fetchProducts()
 }
 
 const logout = () => {
     authStore.logout()
-    router.push({ name: 'home' })
 }
 
 onMounted(fetchProducts)
+
+const logIds = () => {
+    console.log(checkedProductIds.value)
+}
 </script>
 
 <template>
@@ -122,11 +128,14 @@ onMounted(fetchProducts)
             <v-table>
                 <thead>
                     <tr>
+                        <th>
+                            <input type="checkbox">
+                        </th>
                         <th class="text-left font-weight-bold">
                             Name
                         </th>
                         <th class="text-left font-weight-bold">
-                            Calories
+                            Price
                         </th>
                         <th class="text-left font-weight-bold">
                             Options
@@ -137,8 +146,11 @@ onMounted(fetchProducts)
                     <template v-if="products.length > 0">
                         <tbody>
                             <tr v-for="product in products" :key="product.name">
+                                <td>
+                                    <input type="checkbox" v-model="checkedProductIds" :value="product.id" @change="logIds">
+                                </td>
                                 <td>{{ product.name }}</td>
-                                <td>{{ product.price }}</td>
+                                <td>${{ product.price }}</td>
                                 <td class="d-flex ga-2 align-center">
                                     <v-btn class="rounded-xl bg-green" @click="showEditModal(product)">
                                         Edit

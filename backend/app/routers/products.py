@@ -8,7 +8,7 @@ from app.models import Product, ProductCreate, ProductUpdate
 router = APIRouter()
 
 
-@router.get("/products", response_model=list[Product], dependencies=[Depends(get_current_user)])
+@router.get("/products", response_model=list[Product])
 async def read_products(session: SessionDep, limit: int = 10, offset: int = 0):
     products = session.exec(select(Product).offset(offset).limit(limit)).all()
     return products
