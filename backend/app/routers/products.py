@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
+from sqlalchemy import delete
 from sqlmodel import select
 
 from app.core.deps import SessionDep
-from app.core.security import get_current_user
 from app.models import Product, ProductCreate, ProductUpdate
 
 router = APIRouter()
@@ -55,4 +55,16 @@ async def delete_product(product_id: int, session: SessionDep):
         )
     session.delete(product_db)
     session.commit()
-    return { "message": "Product deleted" }
+    return {"message": "Product(s) deleted"}
+
+
+@router.delete("/products/{product_ids}/delete-ids")
+async def delete_products(product_ids: str, session: SessionDep):
+    product_ids = eval(product_ids)
+    if isinstance(product_ids, int):
+        session.exec(delete(Product).where(Product.id == product_ids)) # type: ignore
+    if isinstance(product_ids, tuple):
+        session.exec(delete(Product).where(Product.id.in_(product_ids))) # type: ignore
+    session.commit()
+    return {"message": "Products deleted"}
+
