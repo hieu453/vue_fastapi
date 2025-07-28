@@ -28,10 +28,13 @@ export const useAuthStore = defineStore('auth', () => {
 
     }
 
-    const logout = () => {
+    const logout = async () => {
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
-        window.location.href = "/login"
+        const response = await api.post("/logout")
+        if (response.status === 200) {
+            window.location.href = "/login"
+        }
     }
 
     const getAuthUser = async () => {

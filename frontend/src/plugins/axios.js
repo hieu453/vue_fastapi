@@ -4,7 +4,8 @@ const api = axios.create({
     baseURL: "http://localhost:8000/api",
     headers: {
         'Content-Type': 'application/json',
-    }
+    },
+    withCredentials: true,
 })
 
 api.interceptors.request.use(function (config) {
@@ -25,8 +26,8 @@ api.interceptors.response.use(function (response) {
         originalRequest._retry = true
 
         try {
-            const refreshToken = localStorage.getItem('refresh_token');
-            const response = await axios.post("http://localhost:8000/api/refresh-token", refreshToken);
+            // const refreshToken = localStorage.getItem('refresh_token');
+            const response = await axios.post("http://localhost:8000/api/refresh-token", {}, { withCredentials: true });
             const accessToken = response.data.access_token
             localStorage.setItem('access_token', accessToken)
 

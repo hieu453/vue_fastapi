@@ -92,12 +92,8 @@ const deleteProduct = async (product) => {
     await fetchProducts()
 }
 
-const logout = () => {
-    authStore.logout()
-}
-
-const logIds = () => {
-    console.log(checkedProductIds.value)
+const logout = async () => {
+    await authStore.logout()
 }
 
 const isCheckAll = computed(() => {
@@ -166,8 +162,7 @@ onMounted(fetchProducts)
                         <tbody>
                             <tr v-for="product in products" :key="product.name">
                                 <td>
-                                    <input type="checkbox" v-model="checkedProductIds" :value="product.id"
-                                        @change="logIds">
+                                    <input type="checkbox" v-model="checkedProductIds" :value="product.id">
                                 </td>
                                 <td>{{ product.name }}</td>
                                 <td>${{ product.price }}</td>

@@ -1,10 +1,10 @@
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core import db
 from app.routers import products
 from app.routers import auth
 from app.core.security import get_current_user
+from app.utils import wait_for_connection
 
 app = FastAPI()
 
@@ -20,7 +20,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-db.create_db_and_tables()
+wait_for_connection("fastapi", "root", 123456, "db", 5432)
+
 
 app.include_router(products.router, tags=["Products"], prefix="/api", dependencies=[Depends(get_current_user)])
 app.include_router(auth.router, tags=["Users"], prefix="/api")

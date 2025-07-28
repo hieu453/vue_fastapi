@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import status
 import jwt
@@ -41,6 +41,7 @@ async def register_user(session: SessionDep, user: UserRegister):
 @router.post("/token")
 async def login_for_access_token(
     session: SessionDep,
+    response: Response,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
     user = authenticate(session, email=form_data.username, password=form_data.password)
@@ -52,6 +53,14 @@ async def login_for_access_token(
         )
     access_token = create_access_token(data={"sub": user.email})
     refresh_token = create_refresh_token(data={"sub": user.email})
+    response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            # samesite="strict",
+            max_age=60 * 60 * 24
+        )
     return Token(
         access_token=access_token,
         refresh_token=refresh_token,
@@ -60,19 +69,30 @@ async def login_for_access_token(
 
 
 @router.post("/refresh-token")
-async def get_refresh_token(refresh_token: Annotated[str, Body(alias="refreshToken")]):
+async def get_refresh_token(request: Request):
     credentials_exception = HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    # try:
+    #     payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+    #     access_token = create_access_token(payload)
+    # except (jwt.InvalidTokenError, ValidationError):
+    #     raise credentials_exception
+    r_token = request.cookies.get("refresh_token")
+    if not r_token:
+        print(r_token)
+        raise HTTPException(status_code=401, detail="Missing refresh token")
     try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(r_token, SECRET_KEY, algorithms=[ALGORITHM])
         access_token = create_access_token(payload)
     except (jwt.InvalidTokenError, ValidationError):
         raise credentials_exception
     return {"access_token": access_token}
-    
-    
-    
 
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie("refresh_token")
+    return {"message": "Logout successfully!"}
