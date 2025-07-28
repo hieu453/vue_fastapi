@@ -6,7 +6,7 @@ import jwt
 from pydantic import ValidationError
 
 from app.core.deps import SessionDep
-from app.core.security import ALGORITHM, SECRET_KEY, authenticate, create_access_token, create_refresh_token, get_current_user, get_hashed_password
+from app.core.security import ALGORITHM, SECRET_KEY, authenticate, check_valid_refresh_token, create_access_token, create_refresh_token, get_current_user, get_hashed_password
 from app.models import Token, TokenPayload, User, UserPublic, UserRegister
 from app.utils import get_user_by_email
 
@@ -63,7 +63,6 @@ async def login_for_access_token(
         )
     return Token(
         access_token=access_token,
-        refresh_token=refresh_token,
         token_type="bearer"
     )   
 
@@ -75,19 +74,11 @@ async def get_refresh_token(request: Request):
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    # try:
-    #     payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
-    #     access_token = create_access_token(payload)
-    # except (jwt.InvalidTokenError, ValidationError):
-    #     raise credentials_exception
-    r_token = request.cookies.get("refresh_token")
-    if not r_token:
-        print(r_token)
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
         raise HTTPException(status_code=401, detail="Missing refresh token")
-    try:
-        payload = jwt.decode(r_token, SECRET_KEY, algorithms=[ALGORITHM])
-        access_token = create_access_token(payload)
-    except (jwt.InvalidTokenError, ValidationError):
+    access_token = check_valid_refresh_token(refresh_token)
+    if not access_token:
         raise credentials_exception
     return {"access_token": access_token}
 

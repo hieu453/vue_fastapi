@@ -17,7 +17,6 @@ export const useAuthStore = defineStore('auth', () => {
                 }
             })
             localStorage.setItem('access_token', response.data.access_token)
-            localStorage.setItem('refresh_token', response.data.refresh_token)
 
             return true
         } catch (error) {
@@ -30,7 +29,6 @@ export const useAuthStore = defineStore('auth', () => {
 
     const logout = async () => {
         localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
         const response = await api.post("/logout")
         if (response.status === 200) {
             window.location.href = "/login"

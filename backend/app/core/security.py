@@ -73,4 +73,13 @@ async def get_current_user(session: SessionDep, token: TokenDep):
     return user
 
 
+def check_valid_refresh_token(refresh_token: str):
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        access_token = create_access_token(payload)
+        return access_token
+    except (jwt.InvalidTokenError, ValidationError):
+        return False
+
+
 CurrentUser = Annotated[User, Depends(get_current_user)]

@@ -102,7 +102,9 @@ const isCheckAll = computed(() => {
     }
     return checkedProductIds.value.length === products.value.length
 })
+
 const isDisabledSelectedButton = computed(() => checkedProductIds.value.length === 0)
+
 const toggleCheckAll = () => {
     if (isCheckAll.value === true) {
         checkedProductIds.value.splice(0)
@@ -114,6 +116,7 @@ const toggleCheckAll = () => {
         })
     }
 }
+
 const deleteSelected = async () => {
     await api.delete(`/products/${checkedProductIds.value}/delete-ids`)
     checkedProductIds.value.splice(0)
