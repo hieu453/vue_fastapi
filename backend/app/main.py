@@ -23,7 +23,8 @@ app.add_middleware(
 wait_for_connection("fastapi", "root", 123456, "db", 5432)
 
 
-app.include_router(products.router, tags=["Products"], prefix="/api", dependencies=[Depends(get_current_user)])
+app.include_router(products.router, tags=["Products"], prefix="/api")
+# app.include_router(products.router, tags=["Products"], prefix="/api", dependencies=[Depends(get_current_user)])
 app.include_router(auth.router, tags=["Users"], prefix="/api")
 
 

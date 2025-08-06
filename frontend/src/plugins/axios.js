@@ -26,8 +26,7 @@ api.interceptors.response.use(function (response) {
         originalRequest._retry = true
 
         try {
-            // const refreshToken = localStorage.getItem('refresh_token');
-            const response = await axios.post("http://localhost:8000/api/refresh-token", {}, { withCredentials: true });
+            const response = await axios.post("http://localhost:8000/api/refresh-token", {}, {withCredentials: true});
             const accessToken = response.data.access_token
             localStorage.setItem('access_token', accessToken)
 
@@ -36,7 +35,7 @@ api.interceptors.response.use(function (response) {
         } catch (err) {
             console.error('Token refresh failed:', err);
             localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
+            window.location.href = "/login"
             return Promise.reject(err);
         }
     }

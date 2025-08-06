@@ -39,7 +39,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(seconds=7)
+        expire = datetime.now(timezone.utc) + timedelta(seconds=5)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -74,12 +74,17 @@ async def get_current_user(session: SessionDep, token: TokenDep):
 
 
 def check_valid_refresh_token(refresh_token: str):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     try:
         payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
         access_token = create_access_token(payload)
         return access_token
     except (jwt.InvalidTokenError, ValidationError):
-        return False
+        raise credentials_exception
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]

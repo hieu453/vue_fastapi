@@ -1,17 +1,38 @@
+import math
 from fastapi import APIRouter, HTTPException
+from fastapi import status
 from sqlalchemy import delete
 from sqlmodel import select
+from sqlalchemy import func
 
 from app.core.deps import SessionDep
 from app.models import Product, ProductCreate, ProductUpdate
 
 router = APIRouter()
 
-
-@router.get("/products", response_model=list[Product])
-async def read_products(session: SessionDep, limit: int = 10, offset: int = 0):
+@router.get("/products")
+async def read_products(session: SessionDep, limit: int = 10, page: int = 1):
+    total_products = session.exec(select(func.count(Product.id)).select_from(Product)).one() # type: ignore
+    pages = math.ceil(total_products / limit)
+    if page > pages:
+        raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Not found"
+            )
+    offset = (page - 1) * limit
     products = session.exec(select(Product).offset(offset).limit(limit)).all()
-    return products
+    return {
+            "products": products,
+            "total_products": total_products,
+            "total_products_per_page": limit,
+            "total_pages": pages,
+        }
+
+
+@router.get("/test")
+async def test(session: SessionDep):
+    num_products = session.exec(select(func.count(Product.id)).select_from(Product)) # type: ignore
+    return num_products
 
 
 @router.get("/products/{product_id}", response_model=Product)

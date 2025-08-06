@@ -2,13 +2,15 @@
 import { api } from '@/plugins/axios';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { computed, inject, onMounted, reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import Edit from './Edit.vue';
 import Delete from './Delete.vue';
 import Create from './Create.vue';
 import { resetObject } from '@/utils/resetObject';
 
 const products = ref([])
+const totalProducts = ref(0)
+const totalPages = ref(0)
 const error = ref('')
 const validationErrors = reactive({})
 const openEditModal = ref(false)
@@ -21,6 +23,8 @@ const showSnackbar = inject('showSnackbar')
 
 const authStore = useAuthStore();
 const router = useRouter()
+const route = useRoute()
+const page = ref(Number(route.query.page) || 1)
 
 const showEditModal = (product) => {
     openEditModal.value = true
@@ -50,20 +54,25 @@ const handleValidation = (error) => {
     }
 }
 
-const fetchProducts = async () => {
+const fetchProducts = async (page = route.query.page) => {
     try {
-        const response = await api.get("/products")
-        products.value = response.data
+        let response = null
+        page ? response = await api.get(`/products?page=${page}`) : response = await api.get("/products")
+        products.value = response.data.products
+        totalProducts.value = response.data.total_products
+        totalPages.value = response.data.total_pages  
+        return response.data.products
     } catch (err) {
         error.value = 'You are not logged in!'
     }
 }
+
 const createProduct = async (inputs) => {
     try {
         await api.post('/products', inputs)
         openCreateModal.value = false
         showSnackbar('Product Created!')
-        await fetchProducts()
+        fetchProducts()
     } catch (error) {
         handleValidation(error)
     }
@@ -74,7 +83,7 @@ const updateProduct = async (inputs) => {
         await api.patch(`/products/${inputs.id}`, inputs)
         openEditModal.value = false
         showSnackbar('Product Updated!', 'success')
-        await fetchProducts()
+        fetchProducts()
     } catch (error) {
         handleValidation(error)
     }
@@ -89,11 +98,11 @@ const deleteProduct = async (product) => {
     checkedProductIds.value.splice(index, 1)
 
     showSnackbar('Product Deleted!')
-    await fetchProducts()
+    fetchProducts()
 }
 
 const logout = async () => {
-    await authStore.logout()
+    authStore.logout()
 }
 
 const isCheckAll = computed(() => {
@@ -105,7 +114,7 @@ const isCheckAll = computed(() => {
 
 const isDisabledSelectedButton = computed(() => checkedProductIds.value.length === 0)
 
-const toggleCheckAll = () => {
+const toggleCheckAll = async () => {
     if (isCheckAll.value === true) {
         checkedProductIds.value.splice(0)
     } else {
@@ -114,16 +123,27 @@ const toggleCheckAll = () => {
                 checkedProductIds.value.push(product.id)
             }
         })
+        console.log(checkedProductIds.value)
     }
 }
 
 const deleteSelected = async () => {
-    await api.delete(`/products/${checkedProductIds.value}/delete-ids`)
-    checkedProductIds.value.splice(0)
-    await fetchProducts()
+    const isConfirm = confirm("hello")
+    if (isConfirm) {
+        await api.delete(`/products/${checkedProductIds.value}/delete-ids`)
+        checkedProductIds.value.splice(0)
+        showSnackbar('Products Deleted!')
+        fetchProducts()
+    }
 }
 
 onMounted(fetchProducts)
+
+const changePage = async (pageNumber) => {
+    router.push({ name: 'products', query: { page: pageNumber } })
+    checkedProductIds.value.splice(0)
+    fetchProducts(pageNumber)
+}
 </script>
 
 <template>
@@ -135,62 +155,76 @@ onMounted(fetchProducts)
             <v-btn color="blue" rounded="lg" @click="showCreateModal">
                 Create product
             </v-btn>
-            <v-btn color="red" rounded="lg" :disabled="isDisabledSelectedButton" @click="deleteSelected">Delete Selected</v-btn>
+            <v-btn color="red" rounded="lg" :disabled="isDisabledSelectedButton" @click="deleteSelected">Delete
+                Selected</v-btn>
             <v-btn rounded="lg" @click="logout">
                 Logout
             </v-btn>
         </v-row>
         <v-row justify="center">
-            <v-table>
-                <thead>
-                    <tr>
-                        <!-- Check all button -->
-                        <th>
-                            <input v-if="products.length > 0" type="checkbox" :checked="isCheckAll" @change="toggleCheckAll">
-                        </th>
-                        <!-- End check all button -->
-                        <th class="text-left font-weight-bold">
-                            Name
-                        </th>
-                        <th class="text-left font-weight-bold">
-                            Price
-                        </th>
-                        <th class="text-left font-weight-bold">
-                            Options
-                        </th>
-                    </tr>
-                </thead>
-                <template v-if="products">
-                    <template v-if="products.length > 0">
-                        <tbody>
-                            <tr v-for="product in products" :key="product.name">
-                                <td>
-                                    <input type="checkbox" v-model="checkedProductIds" :value="product.id">
-                                </td>
-                                <td>{{ product.name }}</td>
-                                <td>${{ product.price }}</td>
-                                <td class="d-flex ga-2 align-center">
-                                    <v-btn class="rounded-xl bg-green" @click="showEditModal(product)">
-                                        Edit
-                                    </v-btn>
-                                    <v-btn class="rounded-xl bg-red" @click="showDeleteModal(product)">
-                                        Delete
-                                    </v-btn>
-                                </td>
-                            </tr>
-                        </tbody>
+            <v-col>
+                <v-table>
+                    <thead>
+                        <tr>
+                            <!-- Check all button -->
+                            <th>
+                                <input v-if="products.length > 0" type="checkbox" :checked="isCheckAll"
+                                    @change="toggleCheckAll">
+                            </th>
+                            <!-- End check all button -->
+                            <th class="text-left font-weight-bold">
+                                Name
+                            </th>
+                            <th class="text-left font-weight-bold">
+                                Price
+                            </th>
+                            <th class="text-left font-weight-bold">
+                                Options
+                            </th>
+                        </tr>
+                    </thead>
+                    <template v-if="products">
+                        <template v-if="products.length > 0">
+                            <tbody>
+                                <tr v-for="product in products" :key="product.name">
+                                    <td>
+                                        <input type="checkbox" v-model="checkedProductIds" :value="product.id">
+                                    </td>
+                                    <td>{{ product.name }}</td>
+                                    <td>${{ product.price }}</td>
+                                    <td class="d-flex ga-2 align-center">
+                                        <v-btn class="rounded-xl bg-green" @click="showEditModal(product)">
+                                            Edit
+                                        </v-btn>
+                                        <v-btn class="rounded-xl bg-red" @click="showDeleteModal(product)">
+                                            Delete
+                                        </v-btn>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </template>
+                        <template v-else>
+                            <p>No products in db</p>
+                        </template>
                     </template>
                     <template v-else>
-                        <p>No products in db</p>
+                        Fetching products...
                     </template>
+                </v-table>
+                <div class="text-center">
+                    <v-container>
+                        <v-pagination 
+                            v-model="page"
+                            @update:model-value="changePage"
+                            :length="totalPages"
+                        >
+                        </v-pagination>
+                    </v-container>
+                </div>
+                <template v-if="error">
+                    <p style="color: red;">{{ error }}</p>
                 </template>
-                <template v-else>
-                    Fetching products...
-                </template>
-            </v-table>
-            <template v-if="error">
-                <p style="color: red;">{{ error }}</p>
-            </template>
+            </v-col>
         </v-row>
     </v-container>
 </template>

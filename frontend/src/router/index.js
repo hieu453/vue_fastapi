@@ -48,16 +48,16 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore()
-  const authUser = await authStore.getAuthUser()
+  // const authStore = useAuthStore()
+  // const authUser = await authStore.getAuthUser()
 
-  if (to.meta.guestOnly && authUser) {
-    next({ name: 'products' })
-  } else if (to.meta.requiresAuth && !authUser) {
-    next({ name: 'login' })
-  } else {
+  // if (to.meta.guestOnly && authUser) {
+  //   next({ name: 'products' })
+  // } else if (to.meta.requiresAuth && !authUser) {
+  //   next({ name: 'login' })
+  // } else {
     next()
-  }
+  // }
 })
 
 export default router

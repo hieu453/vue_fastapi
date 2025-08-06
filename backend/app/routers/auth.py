@@ -69,17 +69,10 @@ async def login_for_access_token(
 
 @router.post("/refresh-token")
 async def get_refresh_token(request: Request):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
         raise HTTPException(status_code=401, detail="Missing refresh token")
     access_token = check_valid_refresh_token(refresh_token)
-    if not access_token:
-        raise credentials_exception
     return {"access_token": access_token}
 
 
